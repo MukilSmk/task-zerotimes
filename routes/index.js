@@ -47,60 +47,64 @@ router.post('/search-cve-records', async function (req, res, next) {
   try {
     const search = req.body.search
     let matched_cpe23Uri = []
-
-    //Reading the first json file in extracted folder
-    fs.readFile(`./extracted_files/nvdcve-1.1-2002.json`, 'utf8', async (err, data) => {
+    const directoryPath = "./extracted_files/"
+    fs.readdir(directoryPath, (err, files_in_path) => {
       if (err) {
-        console.log(err)
-        res.send(err)
+        return res.send(err)
       }
-      const result = JSON.parse(data)
+      files_in_path.forEach((files_in_path_item, files_in_path_index) => {
 
-      result.CVE_Items.forEach((item, index) => {
-        if (item.configurations.nodes.length > 0) {
-          let nodes = item.configurations.nodes
+        //Reading the first json file in extracted folder
+        fs.readFile(`./extracted_files/${files_in_path_item}`, 'utf8', async (err, data) => {
+          if (err) {
+            console.log(err)
+            res.send(err)
+          }
+          const result = JSON.parse(data)
 
-          nodes.forEach((nodes_item, nodes_index) => {
-            let cpe_match = nodes_item.cpe_match
-            cpe_match.forEach((cpe_match_item, cpe_match_index) => {
-              console.log(search);
-              // Matching the search elements with the cpe23 uri in the JSON File
-              search.forEach((search_item, search_index) => {
+          result.CVE_Items.forEach((item, index) => {
+            if (item.configurations.nodes.length > 0) {
+              let nodes = item.configurations.nodes
 
-                let cpe23_uri_elements = search_item.split(":")
-                let split_cpe23Uri = cpe_match_item.cpe23Uri.split(":")
-                if (cpe_match_item.cpe23Uri === search_item) {
-                  matched_cpe23Uri.push(item.cve.CVE_data_meta.ID)
-                  return;
-                }
-                if (cpe23_uri_elements[2] === split_cpe23Uri[2] && cpe23_uri_elements[3] === split_cpe23Uri[3] && cpe23_uri_elements[4] === split_cpe23Uri[4] && array_of_search[5] === split_cpe23Uri[5]) {
-                  matched_cpe23Uri.push(item.cve.CVE_data_meta.ID)
-                  return;
-                }
+              nodes.forEach((nodes_item, nodes_index) => {
+                let cpe_match = nodes_item.cpe_match
+                cpe_match.forEach((cpe_match_item, cpe_match_index) => {
+                  // Matching the search elements with the cpe23 uri in the JSON File
+                  search.forEach((search_item, search_index) => {
+                    let cpe23_uri_elements = search_item.split(":")
+                    let split_cpe23Uri = cpe_match_item.cpe23Uri.split(":")
+                    if (cpe_match_item.cpe23Uri === search_item) {
+                      matched_cpe23Uri.push(item.cve.CVE_data_meta.ID)
+                      return;
+                    }
+                    if (cpe23_uri_elements[2] === split_cpe23Uri[2] && cpe23_uri_elements[3] === split_cpe23Uri[3] && cpe23_uri_elements[4] === split_cpe23Uri[4] && cpe23_uri_elements[5] === split_cpe23Uri[5]) {
+                      matched_cpe23Uri.push(item.cve.CVE_data_meta.ID)
+                      return;
+                    }
 
-                if (cpe23_uri_elements[2] === split_cpe23Uri[2] && cpe23_uri_elements[4] === split_cpe23Uri[4] && cpe23_uri_elements[5] === split_cpe23Uri[5]) {
-                  matched_cpe23Uri.push(item.cve.CVE_data_meta.ID)
-                  return;
-                }
-                if (cpe23_uri_elements[2] === split_cpe23Uri[2] && cpe23_uri_elements[4] === split_cpe23Uri[4] && cpe23_uri_elements[3] === split_cpe23Uri[3]) {
-                  matched_cpe23Uri.push(item.cve.CVE_data_meta.ID)
-                  return;
-                }
+                    if (cpe23_uri_elements[2] === split_cpe23Uri[2] && cpe23_uri_elements[4] === split_cpe23Uri[4] && cpe23_uri_elements[5] === split_cpe23Uri[5]) {
+                      matched_cpe23Uri.push(item.cve.CVE_data_meta.ID)
+                      return;
+                    }
+                    if (cpe23_uri_elements[2] === split_cpe23Uri[2] && cpe23_uri_elements[4] === split_cpe23Uri[4] && cpe23_uri_elements[3] === split_cpe23Uri[3]) {
+                      matched_cpe23Uri.push(item.cve.CVE_data_meta.ID)
+                      return;
+                    }
 
-                if (search.length - 1 === search_index && cpe_match.length - 1 === cpe_match_index && result.CVE_Items.length - 1 === index) {
-                  return res.json({
-                    message: "Success",
-                    data: matched_cpe23Uri,
+                    if (files_in_path.length - 1 === files_in_path_index && search.length - 1 === search_index && cpe_match.length - 1 === cpe_match_index && result.CVE_Items.length - 1 === index) {
+                      return res.json({
+                        message: "Success",
+                        data: matched_cpe23Uri,
+                      })
+                    }
                   })
-                }
+                })
               })
-
-            })
-          })
-        }
-      });
+            }
+          });
+        })
+      })
     })
-
   } catch (err) {
     console.log(err)
     res.send(err)
